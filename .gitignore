@@ -30,3 +30,12 @@
 *.exe
 *.out
 *.app
+
+# build output
+out/
+output/
+
+# IDE
+.vs/
+.vscode/
+*.json
