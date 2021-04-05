@@ -1,0 +1,3 @@
+[submodule "3party/Leprechaun"]
+	path = 3party/Leprechaun
+	url = https://github.com/HawkDeath/Leprechaun.git
