@@ -1,10 +1,11 @@
 #include <BaseApplication.h>
 #include <Log/Log.h>
 #include <Renderer/Shader.h>
-#define STB_IMAGE_IMPLEMENTATION
-#include <stb_image.h>
+#include <Renderer/Texture.h>
+
 
 #include <memory>
+#include <vector>
 namespace shader {
 const char *vs = "#version 330 core\n"
                  "layout(location = 0) in vec3 aPos;\n"
@@ -25,7 +26,7 @@ const char *fs = "#version 330 core\n"
                  "uniform sampler2D texture1;\n"
                  "uniform sampler2D texture2;\n"
                  "void main() {\n"
-                 "  FragColor =    mix(texture(texture1, TexCoord), "
+                 "  FragColor =  mix(texture(texture1, TexCoord), "
                  "texture(texture2, TexCoord), 0.8);\n"
                  "}";
 
@@ -89,72 +90,28 @@ protected:
                           (void *)(6 * sizeof(float)));
     glEnableVertexAttribArray(2);
 
-    glGenTextures(1, &texture1);
-    glBindTexture(GL_TEXTURE_2D, texture1);
-    // set the texture wrapping parameters
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,
-                    GL_REPEAT); // set texture wrapping to GL_REPEAT (default
-                                // wrapping method)
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    // set texture filtering parameters
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    // load image, create texture and generate mipmaps
-    int width, height, nrChannels;
-    stbi_set_flip_vertically_on_load(
-        true); // tell stb_image.h to flip loaded texture's on the y-axis.
-    // The FileSystem::getPath(...) is part of the GitHub repository so we can
-    // find files on any IDE/platform; replace it with your own image path.
-    unsigned char *data = stbi_load("C:\\Users\\patry\\Pictures\\4k-images_110628423_312.jpg", &width,
-        &height, &nrChannels, 0);
-    if (data) {
-      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB,
-                   GL_UNSIGNED_BYTE, data);
-      glGenerateMipmap(GL_TEXTURE_2D);
-    } else {
-      ELOG("Failed to load texture")
-    }
-    stbi_image_free(data);
-    // texture 2
-    // ---------
-    glGenTextures(1, &texture2);
-    glBindTexture(GL_TEXTURE_2D, texture2);
-    // set the texture wrapping parameters
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,
-                    GL_REPEAT); // set texture wrapping to GL_REPEAT (default
-                                // wrapping method)
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    // set texture filtering parameters
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    // load image, create texture and generate mipmaps
-    data = stbi_load("C:\\Users\\patry\\Pictures\\138450035_3628861020527913_5281659036981762286_n.png",
-                         //        "resources/textures/awesomeface.png",
-        &width, &height, &nrChannels, 0);
-    if (data) {
-      // note that the awesomeface.png has transparency and thus an alpha
-      // channel, so make sure to tell OpenGL the data type is of GL_RGBA
-      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA,
-                   GL_UNSIGNED_BYTE, data);
-      glGenerateMipmap(GL_TEXTURE_2D);
-    } else {
-      ELOG("Failed to load texture")
-    }
-    stbi_image_free(data);
+    textures.push_back(std::make_unique<Leprechaun::Api::Texture>("texture1"));
+    textures.push_back(std::make_unique<Leprechaun::Api::Texture>("texture2"));
+
+    textures[0]->loadFromFile(
+        "C:\\Users\\patry\\Pictures\\138450035_3628861020527913_"
+        "5281659036981762286_n.png");
+    textures[1]->loadFromFile("C:\\Users\\patry\\Pictures\\gcb0w5zvom821.png");
+
     shader->use();
 
     shader->setInt("texture1", 0);
     shader->setInt("texture2", 1);
-
+    shader->unUse();
   }
 
   void onUpdate(const float &delata) { (void)delata; }
 
   void onDraw() override {
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, texture1);
+    glBindTexture(GL_TEXTURE_2D, textures[0]->getID());
     glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, texture2);
+    glBindTexture(GL_TEXTURE_2D, textures[1]->getID());
 
     shader->use();
 
@@ -165,10 +122,10 @@ protected:
   }
 
 private:
-  uint32_t texture1;
-  uint32_t texture2;
+  std::vector<std::unique_ptr<Leprechaun::Api::Texture>> textures;
   GLuint vbo, vao, ebo;
   std::unique_ptr<Leprechaun::Api::Shader> shader;
+
 };
 
 IMPLEMENT_DEMO(Application)
